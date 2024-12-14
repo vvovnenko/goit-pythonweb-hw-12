@@ -19,6 +19,8 @@ libgravatar = "^1.0.4"
 fastapi-mail = "^1.4.2"
 slowapi = "^0.1.9"
 cloudinary = "^1.41.0"
+pytest = "^8.3.4"
+pytest-asyncio = "^0.25.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -27,3 +29,8 @@ sphinx = "^8.1.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = "."
+filterwarnings = "ignore::DeprecationWarning:jose.*"
+asyncio_default_fixture_loop_scope = "function"

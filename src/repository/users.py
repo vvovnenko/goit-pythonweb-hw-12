@@ -71,14 +71,15 @@ class UserRepository:
         user = User(
             **body.model_dump(exclude_unset=True, exclude={"password"}),
             hashed_password=body.password,
-            avatar=avatar
+            avatar=avatar,
+            is_confirmed=False,
         )
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
         return user
 
-    async def confirmed_email(self, email: str) -> None:
+    async def confirmed_email(self, email: str) -> User:
         """
         Confirm a user's email address.
 
@@ -91,6 +92,8 @@ class UserRepository:
         user = await self.get_user_by_email(email)
         user.is_confirmed = True
         await self.db.commit()
+        await self.db.refresh(user)
+        return user
 
     async def update_avatar_url(self, email: str, url: str) -> User:
         """

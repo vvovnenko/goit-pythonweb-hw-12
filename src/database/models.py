@@ -39,4 +39,4 @@ class User(Base):
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     contacts: Mapped[list["Contact"]] = relationship(back_populates="user")
-    is_confirmed: Mapped[Boolean] = mapped_column(Boolean, default=False, nullable=True)
+    is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
