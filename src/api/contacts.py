@@ -22,7 +22,18 @@ async def create_contact(
     body: ContactModel,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> ContactResponseModel:
+    """
+    Create a new contact for the authenticated user.
+
+    Args:
+        body (ContactModel): The contact details to create.
+        db (AsyncSession): The database session dependency.
+        user (User): The currently authenticated user.
+
+    Returns:
+        ContactResponseModel: The newly created contact.
+    """
     contact_service = ContactService(db)
     return await contact_service.create_contact(body, user)
 
@@ -41,7 +52,23 @@ async def read_contacts(
     limit: int = Query(default=5, le=100, ge=5),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> List[ContactResponseModel]:
+    """
+    Retrieve a list of contacts for the authenticated user, optionally filtered by firstname, lastname, email, and/or upcoming birthday.
+
+    Args:
+        firstname (Optional[str]): Filter contacts by their firstname.
+        lastname (Optional[str]): Filter contacts by their lastname.
+        email (Optional[str]): Filter contacts by their email.
+        upcoming_birthday_days (Optional[int]): Filter contacts who have birthdays within these many upcoming days.
+        skip (int): The number of records to skip for pagination.
+        limit (int): The maximum number of records to return.
+        db (AsyncSession): The database session dependency.
+        user (User): The currently authenticated user.
+
+    Returns:
+        List[ContactResponseModel]: A list of contacts that match the query parameters.
+    """
     contact_service = ContactService(db)
     contacts = await contact_service.read_contacts(
         user, firstname, lastname, email, upcoming_birthday_days, skip, limit
@@ -56,7 +83,21 @@ async def read_contact(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> ContactResponseModel:
+    """
+    Retrieve a single contact by its ID for the authenticated user.
+
+    Args:
+        contact_id (int): The ID of the contact to retrieve.
+        db (AsyncSession): The database session dependency.
+        user (User): The currently authenticated user.
+
+    Raises:
+        HTTPException: If the contact is not found.
+
+    Returns:
+        ContactResponseModel: The requested contact details.
+    """
     contact_service = ContactService(db)
     contact = await contact_service.read_contact(contact_id, user)
     if contact is None:
@@ -74,7 +115,22 @@ async def update_contact(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> ContactResponseModel:
+    """
+    Update an existing contact's details for the authenticated user.
+
+    Args:
+        body (ContactModel): The updated contact details.
+        contact_id (int): The ID of the contact to update.
+        db (AsyncSession): The database session dependency.
+        user (User): The currently authenticated user.
+
+    Raises:
+        HTTPException: If the contact is not found.
+
+    Returns:
+        ContactResponseModel: The updated contact.
+    """
     contact_service = ContactService(db)
     contact = await contact_service.update_contact(contact_id, body, user)
     if contact is None:
@@ -91,7 +147,21 @@ async def delete_contact(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> ContactResponseModel:
+    """
+    Delete a contact by its ID for the authenticated user.
+
+    Args:
+        contact_id (int): The ID of the contact to delete.
+        db (AsyncSession): The database session dependency.
+        user (User): The currently authenticated user.
+
+    Raises:
+        HTTPException: If the contact is not found.
+
+    Returns:
+        ContactResponseModel: The deleted contact's details.
+    """
     contact_service = ContactService(db)
     contact = await contact_service.delete_contact(contact_id, user)
     if contact is None:
