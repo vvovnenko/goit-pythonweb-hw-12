@@ -111,3 +111,23 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(user)
         return user
+
+    async def reset_password(self, email: str, password: str) -> User | None:
+        """
+        Reset the password of a user identified by their email.
+
+        Args:
+            email (str): The email of the user to update.
+            password (str): The new password to be set for the user.
+
+        Returns:
+            User: The updated user object with the new password or None if the user does not exist.
+
+        """
+        user = await self.get_user_by_email(email)
+        if user:
+            user.hashed_password = password
+            await self.db.commit()
+            await self.db.refresh(user)
+
+        return user

@@ -1,6 +1,8 @@
 from libgravatar import Gravatar
 from sqlalchemy.ext.asyncio import AsyncSession
+from watchfiles import awatch
 
+from src.database.models import User
 from src.repository.users import UserRepository
 from src.schemas.usesrs import UserCreate
 
@@ -94,3 +96,16 @@ class UserService:
             Optional[User]: The updated user if the operation was successful, otherwise None.
         """
         return await self.repository.update_avatar_url(email, url)
+
+    async def reset_password(self, email: str, password: str) -> User | None:
+        """
+        Reset the password of a user identified by their email.
+
+        Args:
+            email (str): The email address of the user whose avatar will be updated.
+            password (str): The new hashed password.
+
+        Returns:
+            Optional[User]: The updated user if the operation was successful, otherwise None.
+        """
+        return await self.repository.reset_password(email, password)

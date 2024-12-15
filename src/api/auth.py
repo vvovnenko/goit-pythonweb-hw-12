@@ -3,9 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.schemas.usesrs import UserCreate, User
-from src.schemas.auth import Token, RequestEmail
-from src.service.auth import create_access_token, Hash, get_email_from_token
-from src.service.email import send_email
+from src.schemas.auth import Token, RequestEmail, ResetPassword
+from src.service.auth import (
+    create_access_token,
+    Hash,
+    get_email_from_token,
+    get_email_and_password_from_token,
+)
+from src.service.email import send_email, send_reset_password_email
 from src.service.users import UserService
 from src.database.db import get_db
 
@@ -92,7 +97,7 @@ async def login_user(
             detail="Електронна адреса не підтверджена",
         )
 
-    access_token = await create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -153,3 +158,93 @@ async def request_email(
             send_email, user.email, user.username, request.base_url
         )
     return {"message": "Check your email for confirmation."}
+
+
+@router.post("/reset_password")
+async def reset_password_request(
+    body: ResetPassword,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Initiates a password reset process by sending a reset confirmation email.
+
+    This endpoint takes an email and a new password as input. If the user with the provided
+    email exists, is confirmed, and is known to the system, a password reset email will be sent
+    to the user's email address. The email will contain a link or token to confirm and finalize
+    the password reset process.
+
+    Args:
+        body (ResetPassword): The request body containing the user's email and the new desired password.
+        background_tasks (BackgroundTasks): FastAPI background tasks for sending emails asynchronously.
+        request (Request): The incoming HTTP request to get the base URL.
+        db (AsyncSession): The asynchronous database session dependency.
+
+    Raises:
+        HTTPException: If the user's email is not confirmed, a 400 error is raised indicating
+                       the email is not confirmed.
+
+    Returns:
+        dict: A message indicating that the user should check their email for confirmation.
+    """
+    user_service = UserService(db)
+    user = await user_service.get_user_by_email(body.email)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your email is not registered",
+        )
+
+    hashed_password = Hash().get_password_hash(body.password)
+
+    background_tasks.add_task(
+        send_reset_password_email,
+        email=body.email,
+        username=user.username,
+        hashed_password=hashed_password,
+        host=str(request.base_url),
+    )
+
+    return {"message": "Check your email for confirmation"}
+
+
+@router.get("/confirm_reset_password/{token}")
+async def confirm_reset_password(token: str, db: AsyncSession = Depends(get_db)):
+    """
+    Confirm and reset the user's password using the provided token.
+
+    Args:
+        token (str): The token containing the user's email and new password.
+        db (Session, optional): The database session dependency.
+
+    Raises:
+        HTTPException: If the token is invalid or the user is not found.
+
+    Returns:
+        dict: A message indicating the password has been reset.
+
+    """
+
+    payload = await get_email_and_password_from_token(token)
+    email = payload["email"]
+    hashed_password = payload["password"]
+
+    if not email or not hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token is invalid.",
+        )
+
+    user_service = UserService(db)
+
+    user = await user_service.reset_password(email, hashed_password)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The user is not found.",
+        )
+
+    return {"message": "Password reset successful"}

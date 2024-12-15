@@ -8,3 +8,8 @@ class Token(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
+
+class ResetPassword(BaseModel):
+    email: EmailStr
+    password: str

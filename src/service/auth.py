@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import EmailStr
 from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
@@ -52,7 +53,7 @@ class Hash:
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
-async def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
     """
     Creates a new JWT access token.
 
@@ -165,6 +166,55 @@ async def get_email_from_token(token: str) -> str:
         email = payload["sub"]
         return email
     except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Incorrect token.",
+        )
+
+
+def create_reset_password_token(email: EmailStr, hashed_password: str) -> str:
+    """
+    Create a reset password token for a given email and hashed password.
+
+    This function generates a JWT token containing the user's email and hashed password.
+    The token can be used later to reset the user's password without requiring the user
+    to log in again.
+
+    Args:
+        email (EmailStr): The email address of the user who requested the password reset.
+        hashed_password (str): The hashed password associated with the user.
+
+    Returns:
+        str: The JWT token containing the user's email and hashed password.
+    """
+    return create_access_token({"sub": email, "password": hashed_password})
+
+
+async def get_email_and_password_from_token(token: str) -> dict:
+    """
+    Extract the email and password from a given JWT token.
+
+    This function decodes a JWT token expected to contain "sub" and "password" fields,
+    where "sub" should be the user's email address and "password" the hashed password.
+
+    Args:
+        token (str): The JWT token to decode.
+
+    Raises:
+        HTTPException: If the token is invalid or cannot be decoded.
+
+    Returns:
+        dict: A dictionary containing the user's email and hashed password in the format:
+              {"email": <email>, "password": <hashed_password>}
+    """
+    try:
+        payload = jwt.decode(
+            token, config.JWT_SECRET, algorithms=[config.JWT_ALGORITHM]
+        )
+        email = payload["sub"]
+        password = payload["password"]
+        return {"email": email, "password": password}
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Incorrect token.",

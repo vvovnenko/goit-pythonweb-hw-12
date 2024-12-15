@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from src.service.auth import create_email_token
+from src.service.auth import create_email_token, create_reset_password_token, Hash
 
 user_data = {
     "username": "agent007",
@@ -142,3 +142,47 @@ def test_validation_error_login(client):
     assert response.status_code == 422, response.text
     data = response.json()
     assert "detail" in data
+
+
+def test_reset_password_request_with_unregistered_email(client, monkeypatch):
+    mock_send_email = Mock()
+    monkeypatch.setattr("src.api.auth.send_email", mock_send_email)
+    response = client.post(
+        "api/auth/reset_password",
+        json={"email": "unknown@email.com", "password": "new_password"},
+    )
+    assert response.status_code == 400, response.text
+    data = response.json()
+    assert data["detail"] == "Your email is not registered"
+
+
+def test_reset_password_request(client, monkeypatch):
+    mock_send_email = Mock()
+    monkeypatch.setattr("src.api.auth.send_email", mock_send_email)
+    response = client.post(
+        "api/auth/reset_password",
+        json={"email": user_data.get("email"), "password": "new_password"},
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["message"] == "Check your email for confirmation"
+
+
+def test_confirm_reset_password(client):
+    password = "new_password_1233"
+    hashed_password = Hash().get_password_hash(password)
+    token = create_reset_password_token(user_data.get("email"), hashed_password)
+    response = client.get(f"api/auth/confirm_reset_password/{token}")
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["message"] == "Password reset successful"
+
+    response = client.post(
+        "api/auth/login",
+        data={
+            "username": user_data.get("username"),
+            "password": password,
+        },
+    )
+    assert response.status_code == 200, response.text

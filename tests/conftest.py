@@ -75,9 +75,9 @@ def client():
     yield TestClient(app)
 
 
-@pytest_asyncio.fixture()
-async def get_token():
-    token = await create_access_token(data={"sub": test_user["username"]})
+@pytest.fixture()
+def get_token():
+    token = create_access_token(data={"sub": test_user["username"]})
     return token
 
 

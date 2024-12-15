@@ -143,3 +143,49 @@ async def test_update_avatar_url(user_repository, mock_session):
 
     mock_session.commit.assert_awaited_once()
     mock_session.refresh.assert_awaited_once_with(result)
+
+
+@pytest.mark.asyncio
+async def test_update_avatar_url(user_repository, mock_session):
+    # Setup
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = User(
+        id=1,
+        username="testuser",
+        email="testemail@example.com",
+        hashed_password="hashed_password",
+    )
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    # Call method
+    result = await user_repository.reset_password(
+        email="testemail@example.com", password="new_hashed_password"
+    )
+
+    # Assertions
+    assert isinstance(result, User)
+    assert result.username == "testuser"
+    assert result.email == "testemail@example.com"
+    assert result.hashed_password == "new_hashed_password"
+
+    mock_session.commit.assert_awaited_once()
+    mock_session.refresh.assert_awaited_once_with(result)
+
+
+@pytest.mark.asyncio
+async def test_update_avatar_url_not_found(user_repository, mock_session):
+    # Setup
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    # Call method
+    result = await user_repository.reset_password(
+        email="testemail@example.com", password="new_hashed_password"
+    )
+
+    # Assertions
+    assert result is None
+
+    mock_session.commit.assert_not_called()
+    mock_session.refresh.assert_not_called()
