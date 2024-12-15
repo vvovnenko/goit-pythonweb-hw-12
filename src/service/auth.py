@@ -12,7 +12,7 @@ from jose import JWTError, jwt
 from src.cache.redis_cache import get_redis
 from src.database.db import get_db
 from src.conf.config import config
-from src.database.models import User
+from src.database.models import User, UserRole
 from src.service.users import UserService
 from src.service.users_cache import UserCacheService
 
@@ -127,6 +127,12 @@ async def get_current_user(
     user_cache_service.set_user_to_cache(user)
 
     return user
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Недостатньо прав доступу")
+    return current_user
 
 
 def create_email_token(data: dict) -> str:

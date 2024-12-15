@@ -6,6 +6,7 @@ user_data = {
     "username": "agent007",
     "email": "agent007@gmail.com",
     "password": "12345678",
+    "role": "user",
 }
 
 

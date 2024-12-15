@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import User
+from src.database.models import User, UserRole
 from src.repository.users import UserRepository
 from src.schemas.usesrs import UserCreate
 
@@ -75,7 +75,10 @@ async def test_get_user_by_email(user_repository, mock_session):
 async def test_create_user(user_repository, mock_session):
     # Setup
     user_data = UserCreate(
-        username="testuser", email="testemail@example.com", password="hashedpassword"
+        username="testuser",
+        email="testemail@example.com",
+        password="hashedpassword",
+        role=UserRole.USER,
     )
 
     # Call method
