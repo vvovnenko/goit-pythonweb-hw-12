@@ -1,5 +1,7 @@
 from redis import Redis
 
+from src.conf.config import config
+
 
 def get_redis() -> Redis:
-    return Redis(host="localhost", port=6379, db=0)
+    return Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, db=0)
