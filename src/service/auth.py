@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 
 from src.database.db import get_db
 from src.conf.config import config
+from src.database.models import User
 from src.service.users import UserService
 
 
@@ -73,7 +74,7 @@ async def create_access_token(data: dict, expires_delta: Optional[int] = None) -
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
-):
+) -> User:
     """
     Retrieves the currently authenticated user based on the provided JWT token.
 

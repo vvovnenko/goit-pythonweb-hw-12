@@ -21,6 +21,9 @@ slowapi = "^0.1.9"
 cloudinary = "^1.41.0"
 pytest = "^8.3.4"
 pytest-asyncio = "^0.25.0"
+aiosqlite = "^0.20.0"
+pytest-mock = "^3.14.0"
+pytest-cov = "^6.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -32,5 +35,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = "."
-filterwarnings = "ignore::DeprecationWarning:jose.*"
+filterwarnings = [
+    "ignore::DeprecationWarning:jose.*",
+    "ignore::DeprecationWarning:passlib.*",
+]
 asyncio_default_fixture_loop_scope = "function"

@@ -89,7 +89,7 @@ async def login_user(
     if not user.is_confirmed:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email is incorrect.",
+            detail="Електронна адреса не підтверджена",
         )
 
     access_token = await create_access_token(data={"sub": user.username})
