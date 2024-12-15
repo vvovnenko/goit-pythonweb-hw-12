@@ -26,7 +26,7 @@ class Contact(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    user: Mapped["User"] = relationship(back_populates="contacts")
+    user: Mapped["User"] = relationship(backref="contacts")
 
 
 class User(Base):
@@ -38,5 +38,27 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    contacts: Mapped[list["Contact"]] = relationship(back_populates="user")
     is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "hashed_password": self.hashed_password,
+            "is_confirmed": self.is_confirmed,
+            "created_at": self.created_at.isoformat(),
+            "avatar": self.avatar,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            id=data.get("id"),
+            username=data.get("username"),
+            email=data.get("email"),
+            hashed_password=data.get("hashed_password"),
+            avatar=data.get("avatar"),
+            created_at=datetime.fromisoformat(data.get("created_at")),
+            is_confirmed=data.get("is_confirmed"),
+        )

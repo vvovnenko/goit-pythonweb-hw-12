@@ -4,13 +4,16 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
+from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
 
+from src.cache.redis_cache import get_redis
 from src.database.db import get_db
 from src.conf.config import config
 from src.database.models import User
 from src.service.users import UserService
+from src.service.users_cache import UserCacheService
 
 
 class Hash:
@@ -73,7 +76,9 @@ async def create_access_token(data: dict, expires_delta: Optional[int] = None) -
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
 ) -> User:
     """
     Retrieves the currently authenticated user based on the provided JWT token.
@@ -81,6 +86,7 @@ async def get_current_user(
     Args:
         token (str): The JWT access token extracted from the Authorization header.
         db (AsyncSession): The database session dependency.
+        redis (Redis): The redis connection
 
     Raises:
         HTTPException: If the credentials are invalid or the token cannot be validated.
@@ -103,10 +109,22 @@ async def get_current_user(
             raise credentials_exception
     except JWTError as e:
         raise credentials_exception
+
+    # Отримаємо користувача з кешу
+    user_cache_service = UserCacheService(redis)
+    user = user_cache_service.get_user_from_cache(username)
+    if user:
+        return user
+
+    # Отримаємо користувача з бази даних
     user_service = UserService(db)
     user = await user_service.get_user_by_username(username)
     if user is None:
         raise credentials_exception
+
+    # Збережемо користувача у кеш
+    user_cache_service.set_user_to_cache(user)
+
     return user
 
 

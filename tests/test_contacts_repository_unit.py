@@ -48,7 +48,7 @@ async def test_create_contact(contact_repository, mock_session, user):
     assert result.phone == "1234567890"
     assert result.birthday == date(1990, 1, 1)
     assert result.comment == "Friend from college"
-    assert result.user == user
+    assert result.user_id == user.id
 
     mock_session.add.assert_called_once()
     mock_session.commit.assert_awaited_once()
